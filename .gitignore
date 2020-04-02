@@ -54,3 +54,4 @@ dkms.conf
 
 lib/
 build/
+.settings/
