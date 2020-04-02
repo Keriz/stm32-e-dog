@@ -11,8 +11,17 @@
 #include <motors.h>
 #include <chprintf.h>
 
+#include <camera/po8030.h>
 
+#include <pi_regulator.h>
+#include <process_image.h>
+#include <sensors/proximity.h>
+#include "sensors/VL53L0X/VL53L0X.h"
+#include <process_move.h>
 
+messagebus_t bus;
+MUTEX_DECL(bus_lock);
+CONDVAR_DECL(bus_condvar);
 
 static void serial_start(void)
 {
@@ -26,23 +35,47 @@ static void serial_start(void)
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
+void Send_value2(void)
+{
+	chprintf((BaseSequentialStream *)&SD3, "sensor7_=%d\n", get_calibrated_prox(7));
+	chprintf((BaseSequentialStream *)&SD3, "sensor6_=%d\n", get_calibrated_prox(6));
+	chprintf((BaseSequentialStream *)&SD3, "sensor5_=%d\n", get_calibrated_prox(5));
+}
+void Send_value3(void)
+{
+	chprintf((BaseSequentialStream *)&SD3,"VLdistance_cm0_=%d\n",VL53L0X_get_dist_mm());
+}
+void Done(void)
+{
+	chprintf((BaseSequentialStream *)&SD3,"turn\n");
+}
+
 int main(void)
 {
 
-    halInit();
-    chSysInit();
-    mpu_init();
-    //starts the serial communication
-    serial_start();
-    //start the USB communication
-    usb_start();
+	halInit();
+	chSysInit();
+	mpu_init();
 
-	//inits the motors
+	serial_start();
+	usb_start();
+	dcmi_start();
+	po8030_start();
 	motors_init();
 
+	//pi_regulator_start();
+	//process_image_start();
+	proximity_start();
+	process_move_start();
+	
+	messagebus_init(&bus, &bus_lock, &bus_condvar);
+	messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");
+	proximity_msg_t proximity_values;
     /* Infinite loop. */
     while (1) {
-        chThdSleepMilliseconds(1000);
+    		messagebus_topic_wait(proximity_topic, &proximity_values, sizeof(proximity_values));
+    		Send_value2();
+    		chThdSleepMilliseconds(1000);
     }
 }
 
