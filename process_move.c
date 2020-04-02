@@ -90,8 +90,6 @@ static THD_FUNCTION(Processmove, arg) {
     			//Done();
     		//	motor_stop();
     		//}
-
-        
         //100Hz
         chThdSleepUntilWindowed(time, time + MS2ST(10));
     }

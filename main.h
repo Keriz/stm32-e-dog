@@ -11,7 +11,7 @@ extern "C" {
 
 #define MOTOR_SPEED   338 // [step/s]
 #define STOP  		0
-#define COLLISION  	1400
+#define COLLISION  	1300
 
 #define NSTEP_ONE_TURN      1000 // number of step for 1 turn of the motor
 #define PI                  3.1415926536f

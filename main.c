@@ -13,8 +13,6 @@
 
 #include <camera/po8030.h>
 
-#include <pi_regulator.h>
-#include <process_image.h>
 #include <sensors/proximity.h>
 #include "sensors/VL53L0X/VL53L0X.h"
 #include <process_move.h>
@@ -37,9 +35,9 @@ static void serial_start(void)
 
 void Send_value2(void)
 {
-	chprintf((BaseSequentialStream *)&SD3, "sensor7_=%d\n", get_calibrated_prox(7));
-	chprintf((BaseSequentialStream *)&SD3, "sensor6_=%d\n", get_calibrated_prox(6));
-	chprintf((BaseSequentialStream *)&SD3, "sensor5_=%d\n", get_calibrated_prox(5));
+	chprintf((BaseSequentialStream *)&SD3, "counterright_=%d\n", right_motor_get_pos());
+	chprintf((BaseSequentialStream *)&SD3, "counterleft_=%d\n", left_motor_get_pos());
+
 }
 void Send_value3(void)
 {
@@ -59,12 +57,8 @@ int main(void)
 
 	serial_start();
 	usb_start();
-	dcmi_start();
-	po8030_start();
 	motors_init();
 
-	//pi_regulator_start();
-	//process_image_start();
 	proximity_start();
 	process_move_start();
 	
