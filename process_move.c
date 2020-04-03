@@ -30,6 +30,11 @@ void turn_left(void){
 	left_motor_set_speed(-MOTOR_SPEED);
 }
 
+void counter_motor_step_init(int32_t counter_value){
+	left_motor_set_pos(counter_value);
+	right_motor_set_pos(counter_value);
+}
+
 void motor_set_position(float position_r, float position_l)
 {
 	//Set global variable with position to reach in step
@@ -41,13 +46,29 @@ void motor_set_position(float position_r, float position_l)
 void motor_one_turn(void){
 	//probleme vu que le timer dans ce boucle while est different du timer moteur
 	while(position_to_reach_left > counter_step_left){
-
+		counter_step_left= right_motor_get_pos();
 		turn_left();
 		chprintf((BaseSequentialStream *)&SD3, "counter=%d\n", counter_step_left);
-		counter_step_left++;
 	}
 	chprintf((BaseSequentialStream *)&SD3, "one turn\n");
 }
+
+void turn_x_degree(int degree){
+	float theta_in_cm_left;
+	float theta_in_cm_right;
+
+	counter_motor_step_init(0);
+	theta_in_cm_left= degree* PERIMETER_EPUCK /(360*2) ;
+	theta_in_cm_right= degree* PERIMETER_EPUCK /(360*2);
+	motor_set_position(theta_in_cm_right,theta_in_cm_left);
+
+	while(position_to_reach_left > counter_step_left){
+		counter_step_left= right_motor_get_pos();
+		turn_left();
+	}
+
+}
+
 
 void motor_stop(void){
 	right_motor_set_speed(STOP);
