@@ -40,11 +40,11 @@ void motor_set_position(float position_r, float position_l)
 {
 	//Set global variable with position to reach in step
 	position_to_reach_left = position_l * NSTEP_ONE_TURN / WHEEL_PERIMETER;
-	position_to_reach_right = -position_r * NSTEP_ONE_TURN / WHEEL_PERIMETER;
+	position_to_reach_right = position_r * NSTEP_ONE_TURN / WHEEL_PERIMETER;
 	chprintf((BaseSequentialStream *)&SD3, "pos_to_reach=%d\n", position_to_reach_left);
 }
 
-void advence_or_turn_x_left(int x, bool unit){
+void advance_or_turn_x_left(int x, bool unit){
 	float dist_left;
 	float dist_right;
 	counter_motor_step_init(0);
@@ -58,13 +58,14 @@ void advence_or_turn_x_left(int x, bool unit){
 	else //not an angle direct convert cm to step
 		motor_set_position(x,x);
 
-	while(position_to_reach_left > counter_step_left){
-		counter_step_left= right_motor_get_pos();
+	while(abs(position_to_reach_left) > abs(counter_step_left)){
+		Send_value2();
+		counter_step_left= left_motor_get_pos();
 		turn_left();
 	}
 }
 
-void advence_or_turn_x_right(int x, bool unit){
+void advance_or_turn_x_right(int x, bool unit){
 	float dist_left;
 	float dist_right;
 	counter_motor_step_init(0);
@@ -78,8 +79,8 @@ void advence_or_turn_x_right(int x, bool unit){
 	else //not an angle direct convert cm to step
 		motor_set_position(x,x);
 
-	while(position_to_reach_right > counter_step_right){
-		counter_step_right= left_motor_get_pos();
+	while(abs(position_to_reach_right) > abs(counter_step_right)){
+		counter_step_right= right_motor_get_pos();
 		turn_right();
 	}
 }

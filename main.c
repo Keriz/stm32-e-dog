@@ -61,9 +61,9 @@ int main(void)
 
 	//turn_x_degree(360);
 	//parameter(x, angle(true) or cm(false)?, right(true) or left(false)?)
-	advence_or_turn_x_left(360, true);
-	//advence_or_turn_x_right(360,true);
-
+	//advance_or_turn_x_left(360, true);
+	advance_or_turn_x_right(360,true);
+	advance_or_turn_x_right(360,true);
 	proximity_start();
 	process_move_start();
 	
