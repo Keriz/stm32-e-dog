@@ -14,6 +14,7 @@
 static int16_t position_to_reach_right = 0;	    // in [step]
 static int16_t position_to_reach_left = 0;	    // in [step]
 static int16_t counter_step_left = 0; 		    // in [step]
+static int16_t counter_step_right = 0;
 
 void go_forward(void){
 	right_motor_set_speed(MOTOR_SPEED);
@@ -43,39 +44,50 @@ void motor_set_position(float position_r, float position_l)
 	chprintf((BaseSequentialStream *)&SD3, "pos_to_reach=%d\n", position_to_reach_left);
 }
 
-void motor_one_turn(void){
-	//probleme vu que le timer dans ce boucle while est different du timer moteur
-	while(position_to_reach_left > counter_step_left){
-		counter_step_left= right_motor_get_pos();
-		turn_left();
-		chprintf((BaseSequentialStream *)&SD3, "counter=%d\n", counter_step_left);
-	}
-	chprintf((BaseSequentialStream *)&SD3, "one turn\n");
-}
-
-void turn_x_degree(int degree){
-	float theta_in_cm_left;
-	float theta_in_cm_right;
-
+void advence_or_turn_x_left(int x, bool unit){
+	float dist_left;
+	float dist_right;
 	counter_motor_step_init(0);
-	theta_in_cm_left= degree* PERIMETER_EPUCK /(360*2) ;
-	theta_in_cm_right= degree* PERIMETER_EPUCK /(360*2);
-	motor_set_position(theta_in_cm_right,theta_in_cm_left);
+
+	//if x in degree convert to dist
+	if(unit){
+		dist_left=  x* PERIMETER_EPUCK /(360) ;
+		dist_right= x* PERIMETER_EPUCK /(360);
+		motor_set_position(dist_right,dist_left);
+	}
+	else //not an angle direct convert cm to step
+		motor_set_position(x,x);
 
 	while(position_to_reach_left > counter_step_left){
 		counter_step_left= right_motor_get_pos();
 		turn_left();
 	}
-
 }
 
+void advence_or_turn_x_right(int x, bool unit){
+	float dist_left;
+	float dist_right;
+	counter_motor_step_init(0);
+
+	//if x in degree convert to dist
+	if(unit){
+		dist_left=  x* PERIMETER_EPUCK /(360) ;
+		dist_right= x* PERIMETER_EPUCK /(360);
+		motor_set_position(dist_right,dist_left);
+	}
+	else //not an angle direct convert cm to step
+		motor_set_position(x,x);
+
+	while(position_to_reach_right > counter_step_right){
+		counter_step_right= left_motor_get_pos();
+		turn_right();
+	}
+}
 
 void motor_stop(void){
 	right_motor_set_speed(STOP);
 	left_motor_set_speed(STOP);
 }
-
-
 
 static THD_WORKING_AREA(waProcessmove, 256);
 static THD_FUNCTION(Processmove, arg) {

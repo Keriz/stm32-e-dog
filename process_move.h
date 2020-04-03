@@ -2,7 +2,8 @@
 #define EXPLORE
 
 void counter_motor_step_init(int32_t counter_value);
-void turn_x_degree(int degree);
+void advence_or_turn_x_left(int x, bool unit );
+void advence_or_turn_x_right(int x, bool unit );
 
 void process_move_start(void);
 void motor_stop(void);

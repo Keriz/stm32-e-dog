@@ -59,10 +59,11 @@ int main(void)
 	usb_start();
 	motors_init();
 
-	motor_set_position(PERIMETER_EPUCK/2,PERIMETER_EPUCK/2);
-	motor_one_turn();
-
 	//turn_x_degree(360);
+	//parameter(x, angle(true) or cm(false)?, right(true) or left(false)?)
+	advence_or_turn_x_left(360, true);
+	//advence_or_turn_x_right(360,true);
+
 	proximity_start();
 	process_move_start();
 	
