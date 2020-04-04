@@ -35,17 +35,18 @@ static void serial_start(void)
 
 void Send_value2(void)
 {
-	chprintf((BaseSequentialStream *)&SD3, "counterright_=%d\n", right_motor_get_pos());
-	chprintf((BaseSequentialStream *)&SD3, "counterleft_=%d\n", left_motor_get_pos());
+	chprintf((BaseSequentialStream *)&SD3, "prox1_cali_=%d\n", get_calibrated_prox(1));
+	chprintf((BaseSequentialStream *)&SD3, "prox0_cali_=%d\n", get_calibrated_prox(0));
+
 
 }
 void Send_value3(void)
 {
-	chprintf((BaseSequentialStream *)&SD3,"VLdistance_cm0_=%d\n",VL53L0X_get_dist_mm());
+	chprintf((BaseSequentialStream *)&SD3,"pos_to_reach_right=%d\n",VL53L0X_get_dist_mm());
 }
 void Done(void)
 {
-	chprintf((BaseSequentialStream *)&SD3,"turn\n");
+	chprintf((BaseSequentialStream *)&SD3,"gauche\n");
 }
 
 int main(void)
@@ -59,21 +60,20 @@ int main(void)
 	usb_start();
 	motors_init();
 
-	//turn_x_degree(360);
 	//parameter(x, angle(true) or cm(false)?, right(true) or left(false)?)
-	//advance_or_turn_x_left(360, true);
-	advance_or_turn_x_right(360,true);
-	advance_or_turn_x_right(360,true);
+	//advance_or_turn_x_left(360,true);
+	//advance_or_turn_x_right(360,true);
+
+
 	proximity_start();
 	process_move_start();
-	
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
 	messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");
 	proximity_msg_t proximity_values;
     /* Infinite loop. */
     while (1) {
+    		//Send_value2();
     		messagebus_topic_wait(proximity_topic, &proximity_values, sizeof(proximity_values));
-    		Send_value2();
     		chThdSleepMilliseconds(1000);
     }
 }

@@ -36,49 +36,33 @@ void counter_motor_step_init(int32_t counter_value){
 	right_motor_set_pos(counter_value);
 }
 
-void motor_set_position(float position_r, float position_l)
+void motor_set_position(float x, bool unit )
 {
+	float dist_left; //useless?
+	float dist_right;
+	if(unit){ //if x in degree convert to dist
+		dist_left=  x* PERIMETER_EPUCK /(360);
+		dist_right= x* PERIMETER_EPUCK /(360); //useless?
+		x= dist_right;
+	}
 	//Set global variable with position to reach in step
-	position_to_reach_left = position_l * NSTEP_ONE_TURN / WHEEL_PERIMETER;
-	position_to_reach_right = position_r * NSTEP_ONE_TURN / WHEEL_PERIMETER;
-	chprintf((BaseSequentialStream *)&SD3, "pos_to_reach=%d\n", position_to_reach_left);
+	position_to_reach_left = x * NSTEP_ONE_TURN / WHEEL_PERIMETER;
+	position_to_reach_right = x * NSTEP_ONE_TURN / WHEEL_PERIMETER;
+	//chprintf((BaseSequentialStream *)&SD3, "pos_to_reach=%d\n", position_to_reach_left);
 }
 
-void advance_or_turn_x_left(int x, bool unit){
-	float dist_left;
-	float dist_right;
+void advance_or_turn_x_left(float x, bool unit){
 	counter_motor_step_init(0);
-
-	//if x in degree convert to dist
-	if(unit){
-		dist_left=  x* PERIMETER_EPUCK /(360) ;
-		dist_right= x* PERIMETER_EPUCK /(360);
-		motor_set_position(dist_right,dist_left);
-	}
-	else //not an angle direct convert cm to step
-		motor_set_position(x,x);
-
+	motor_set_position(x,unit);
 	while(abs(position_to_reach_left) > abs(counter_step_left)){
-		Send_value2();
 		counter_step_left= left_motor_get_pos();
 		turn_left();
 	}
 }
 
-void advance_or_turn_x_right(int x, bool unit){
-	float dist_left;
-	float dist_right;
+void advance_or_turn_x_right(float x, bool unit){
 	counter_motor_step_init(0);
-
-	//if x in degree convert to dist
-	if(unit){
-		dist_left=  x* PERIMETER_EPUCK /(360) ;
-		dist_right= x* PERIMETER_EPUCK /(360);
-		motor_set_position(dist_right,dist_left);
-	}
-	else //not an angle direct convert cm to step
-		motor_set_position(x,x);
-
+	motor_set_position(x,unit);
 	while(abs(position_to_reach_right) > abs(counter_step_right)){
 		counter_step_right= right_motor_get_pos();
 		turn_right();
@@ -100,26 +84,32 @@ static THD_FUNCTION(Processmove, arg) {
     uint16_t  dist_front_TL;
     int ir_sensor7;
     int ir_sensor6;
+    int ir_sensor1;
+    int ir_sensor0;
 
     while(1){
     		dist_front_TL = VL53L0X_get_dist_mm();
     		ir_sensor7 = get_calibrated_prox(7);
     		ir_sensor6 = get_calibrated_prox(6);
-    		Send_value2();
-    		//if (dist_front_TL > 100){
-
-    			if( ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
-    				while( ir_sensor6 > COLLISION || ir_sensor7 > COLLISION ){
-    					ir_sensor7 = get_calibrated_prox(7);
-    					ir_sensor6 = get_calibrated_prox(6);
-    					//Done();
-    					turn_right();
-    				}
-    			//}
-
-
+    		ir_sensor1 = get_calibrated_prox(1);
+    		ir_sensor0 = get_calibrated_prox(0);
+    		if( ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
+    			while(ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
+    				ir_sensor7 = get_calibrated_prox(7);
+    				ir_sensor6 = get_calibrated_prox(6);
+    				turn_right();
+    			}
+    			advance_or_turn_x_right(30,true);
     		}
-    			go_forward();
+    		if( ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
+    		    	while(ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
+    		    		ir_sensor1 = get_calibrated_prox(1);
+    		    		ir_sensor0 = get_calibrated_prox(0);
+    		    		turn_left();
+    		    	}
+    		    	advance_or_turn_x_left(30,true);
+    		}
+    		go_forward();
     		//else{
     			//Done();
     		//	motor_stop();
