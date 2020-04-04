@@ -21,6 +21,8 @@
 *.a
 *.la
 *.lo
+!AcousticSL_CM4F_wc16_ot.a
+!AcousticSL_CM4F_wc32_ot.a
 
 # Shared objects (inc. Windows DLLs)
 *.dll
