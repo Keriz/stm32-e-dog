@@ -53,7 +53,9 @@ dkms.conf
 
 
 lib/
-!lib/e-puck2_main-processor/src/rules.mk
-!lib/e-puck2_main-processor/src/Makefile
+!lib/e-puck2_main-processor/rules.mk
+!lib/e-puck2_main-processor/Makefile
 build/
 .settings/
+.cproject
+.settings/language.settings.xml
