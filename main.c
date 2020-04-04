@@ -10,6 +10,8 @@
 #include <main.h>
 #include <motors.h>
 #include <chprintf.h>
+#include <audio.h>
+#include <audio/microphone.h>
 
 #include <camera/po8030.h>
 
@@ -60,6 +62,18 @@ int main(void)
 	usb_start();
 	motors_init();
 
+<<<<<<< HEAD
+=======
+	acoustic_init();
+	mic_start(&processAudioData);
+
+
+    /* Infinite loop. */
+    while (1) {
+
+        chThdSleepMilliseconds(1000);
+	//turn_x_degree(360);
+>>>>>>> b89865bcfa4c64d5fc648457748da8c46c340eb5
 	//parameter(x, angle(true) or cm(false)?, right(true) or left(false)?)
 	//advance_or_turn_x_left(360,true);
 	//advance_or_turn_x_right(360,true);
