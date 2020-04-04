@@ -10,8 +10,8 @@
 #include <main.h>
 #include <motors.h>
 #include <chprintf.h>
-
-
+#include <audio.h>
+#include <audio/microphone.h>
 
 
 static void serial_start(void)
@@ -40,8 +40,13 @@ int main(void)
 	//inits the motors
 	motors_init();
 
+	acoustic_init();
+	mic_start(&processAudioData);
+
+
     /* Infinite loop. */
     while (1) {
+
         chThdSleepMilliseconds(1000);
     }
 }

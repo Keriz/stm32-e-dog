@@ -53,5 +53,7 @@ dkms.conf
 
 
 lib/
+!lib/e-puck2_main-processor/src/rules.mk
+!lib/e-puck2_main-processor/src/Makefile
 build/
 .settings/
