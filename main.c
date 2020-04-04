@@ -13,6 +13,15 @@
 #include <audio.h>
 #include <audio/microphone.h>
 
+#include <camera/po8030.h>
+
+#include <sensors/proximity.h>
+#include "sensors/VL53L0X/VL53L0X.h"
+#include <process_move.h>
+
+messagebus_t bus;
+MUTEX_DECL(bus_lock);
+CONDVAR_DECL(bus_condvar);
 
 static void serial_start(void)
 {
@@ -26,18 +35,30 @@ static void serial_start(void)
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
+void Send_value2(void)
+{
+	chprintf((BaseSequentialStream *)&SD3, "counterright_=%d\n", right_motor_get_pos());
+	chprintf((BaseSequentialStream *)&SD3, "counterleft_=%d\n", left_motor_get_pos());
+
+}
+void Send_value3(void)
+{
+	chprintf((BaseSequentialStream *)&SD3,"VLdistance_cm0_=%d\n",VL53L0X_get_dist_mm());
+}
+void Done(void)
+{
+	chprintf((BaseSequentialStream *)&SD3,"turn\n");
+}
+
 int main(void)
 {
 
-    halInit();
-    chSysInit();
-    mpu_init();
-    //starts the serial communication
-    serial_start();
-    //start the USB communication
-    usb_start();
+	halInit();
+	chSysInit();
+	mpu_init();
 
-	//inits the motors
+	serial_start();
+	usb_start();
 	motors_init();
 
 	acoustic_init();
@@ -48,6 +69,22 @@ int main(void)
     while (1) {
 
         chThdSleepMilliseconds(1000);
+	//turn_x_degree(360);
+	//parameter(x, angle(true) or cm(false)?, right(true) or left(false)?)
+	//advance_or_turn_x_left(360, true);
+	advance_or_turn_x_right(360,true);
+	advance_or_turn_x_right(360,true);
+	proximity_start();
+	process_move_start();
+	
+	messagebus_init(&bus, &bus_lock, &bus_condvar);
+	messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");
+	proximity_msg_t proximity_values;
+    /* Infinite loop. */
+    while (1) {
+    		messagebus_topic_wait(proximity_topic, &proximity_values, sizeof(proximity_values));
+    		Send_value2();
+    		chThdSleepMilliseconds(1000);
     }
 }
 
