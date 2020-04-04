@@ -52,7 +52,7 @@ Mkfile.old
 dkms.conf
 
 
-lib/
+lib/e-puck2_main-processor/*
 !lib/e-puck2_main-processor/rules.mk
 !lib/e-puck2_main-processor/Makefile
 build/
