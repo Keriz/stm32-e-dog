@@ -1,6 +1,8 @@
 #ifndef EXPLORE
 #define EXPLORE
 
+
+
 void counter_motor_step_init(int32_t counter_value);
 void advance_or_turn_x_left(float x, bool unit );
 void advance_or_turn_x_right(float x, bool unit);

@@ -14,7 +14,7 @@
 
 #define SAMPLING_FREQUENCY 	16000 //160 samples every 10ms
 #define NUMBER_CHANNELS		4
-#define NUMBER_CHANNEL_PER_STREAM 1
+#define NUMBER_CHANNEL_PER_STREAM 4
 
 //units in decimals of a millimeter
 #define DISTANCE_MIC_LEFT_RIGHT 620
@@ -68,7 +68,7 @@ uint16_t acoustic_init(void){
 
 	/*Setup Source Localization dynamic parameters*/
 	libSoundSourceLoc_Config_Instance.resolution = 10;
-	libSoundSourceLoc_Config_Instance.threshold = 150;
+	libSoundSourceLoc_Config_Instance.threshold = 15000;
 	error_value = AcousticSL_setConfig(&libSoundSourceLoc_Handler_Instance, &libSoundSourceLoc_Config_Instance);
 
 	if(error_value != 0)
@@ -90,17 +90,27 @@ uint16_t acoustic_init(void){
 *							so we have [micRight1, micLeft1, micBack1, micFront1, micRight2, etc...]
 *	uint16_t num_samples	Tells how many data we get in total (should always be 640)
 */
+
+//static int32_t result[4];
 void processAudioData(int16_t *data, uint16_t num_samples){
 
 	int32_t result[4];
 
-	for (uint16_t i = 0; i < num_samples; ++i){
+	for (uint16_t i = 0; i < 16; ++i){
 
 		micBufferIN[i*4+RIGHT_MIC] 	= data[i*4+RIGHT_MIC];
 		micBufferIN[i*4+LEFT_MIC] 	= data[i*4+LEFT_MIC];
 		micBufferIN[i*4+FRONT_MIC] 	= data[i*4+FRONT_MIC];
 		micBufferIN[i*4+BOTTOM_MIC] = data[i*4+BOTTOM_MIC];
+
+		if(i >= (4*SAMPLING_FREQUENCY/1000) ){
+					break;
+				}
 	}
+
+	//for (uint16_t j = 0; j < (4*SAMPLING_FREQUENCY/1000); ++j){
+	//	chprintf((BaseSequentialStream *)&SD3, "micbuffer= %d\n",micBufferIN[j]);
+	//}
 
 
 	if(AcousticSL_Data_Input((int16_t *)&micBufferIN[LEFT_MIC], (int16_t *)&micBufferIN[RIGHT_MIC],
@@ -108,16 +118,20 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 
 		AcousticSL_Process((int32_t *)result, &libSoundSourceLoc_Handler_Instance);
 
+		chprintf((BaseSequentialStream *)&SD3, "result before =%d\n",result[0] );
 		if(result[0]!=ACOUSTIC_SL_NO_AUDIO_DETECTED)
 		{
 		result[0]=(result[0] - 45);
 		if(result[0]<0)
 		  result[0]+=360;
+		chprintf((BaseSequentialStream *)&SD3, "result=%d\n",result[0] );
 		}
-		chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&result[0], sizeof(uint32_t));
-	}
 
+	}
 }
 
+//int32_t get_degree(void) {
+//	return result[0];
+//}
 
 

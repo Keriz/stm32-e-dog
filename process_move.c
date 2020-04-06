@@ -87,12 +87,17 @@ static THD_FUNCTION(Processmove, arg) {
     int ir_sensor1;
     int ir_sensor0;
 
+
+
+
+
     while(1){
     		dist_front_TL = VL53L0X_get_dist_mm();
     		ir_sensor7 = get_calibrated_prox(7);
     		ir_sensor6 = get_calibrated_prox(6);
     		ir_sensor1 = get_calibrated_prox(1);
     		ir_sensor0 = get_calibrated_prox(0);
+    		Send_value2();
     		if( ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
     			while(ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
     				ir_sensor7 = get_calibrated_prox(7);
@@ -100,6 +105,9 @@ static THD_FUNCTION(Processmove, arg) {
     				turn_right();
     			}
     			advance_or_turn_x_right(30,true);
+    			//advance_or_turn_x_right(3,false);
+    			//int32_t degree_r= get_degree();
+    			//advance_or_turn_x_left((90-degree) ,true);
     		}
     		if( ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
     		    	while(ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
@@ -108,6 +116,11 @@ static THD_FUNCTION(Processmove, arg) {
     		    		turn_left();
     		    	}
     		    	advance_or_turn_x_left(30,true);
+
+    		    //	advance_or_turn_x_right(3,false);
+
+    		    	//int32_t degree_l= get_degree();
+    		    	//advance_or_turn_x_right((90-degree) ,true);
     		}
     		go_forward();
     		//else{

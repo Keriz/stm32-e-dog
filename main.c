@@ -48,7 +48,11 @@ void Send_value3(void)
 }
 void Done(void)
 {
-	chprintf((BaseSequentialStream *)&SD3,"gauche\n");
+	chprintf((BaseSequentialStream *)&SD3,"wesh\n");
+}
+void Done2(void)
+{
+	chprintf((BaseSequentialStream *)&SD3,"boucle\n");
 }
 
 int main(void)
@@ -62,31 +66,27 @@ int main(void)
 	usb_start();
 	motors_init();
 
-<<<<<<< HEAD
-=======
 	acoustic_init();
 	mic_start(&processAudioData);
 
+	//if degree is possible
+	//int32_t degree= get_degree();
+	//advance_or_turn_x_left(degree ,true);
 
-    /* Infinite loop. */
-    while (1) {
-
-        chThdSleepMilliseconds(1000);
 	//turn_x_degree(360);
->>>>>>> b89865bcfa4c64d5fc648457748da8c46c340eb5
 	//parameter(x, angle(true) or cm(false)?, right(true) or left(false)?)
 	//advance_or_turn_x_left(360,true);
 	//advance_or_turn_x_right(360,true);
 
 
 	proximity_start();
-	process_move_start();
+	//process_move_start();
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
 	messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");
 	proximity_msg_t proximity_values;
     /* Infinite loop. */
     while (1) {
-    		//Send_value2();
+    		//Done();
     		messagebus_topic_wait(proximity_topic, &proximity_values, sizeof(proximity_values));
     		chThdSleepMilliseconds(1000);
     }
