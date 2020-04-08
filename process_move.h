@@ -8,6 +8,8 @@ void advance_or_turn_x_left(float x, bool unit );
 void advance_or_turn_x_right(float x, bool unit);
 void advance_or_turn_x_right_temp(int x, bool unit);
 
+int16_t pi_regulator(float distance, float goal);
+
 void process_move_start(void);
 void motor_stop(void);
 void go_forward(void);

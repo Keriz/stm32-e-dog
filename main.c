@@ -10,7 +10,7 @@
 #include <main.h>
 #include <motors.h>
 #include <chprintf.h>
-#include <audio.h>
+//#include <audio.h>
 #include <audio/microphone.h>
 
 #include <camera/po8030.h>
@@ -18,6 +18,7 @@
 #include <sensors/proximity.h>
 #include "sensors/VL53L0X/VL53L0X.h"
 #include <process_move.h>
+#include <process_audio.h>
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -66,8 +67,8 @@ int main(void)
 	usb_start();
 	motors_init();
 
-	acoustic_init();
-	mic_start(&processAudioData);
+	//acoustic_init();
+	//mic_start(&processAudioData);
 
 	//if degree is possible
 	//int32_t degree= get_degree();
@@ -78,7 +79,9 @@ int main(void)
 	//advance_or_turn_x_left(360,true);
 	//advance_or_turn_x_right(360,true);
 
+	mic_start(&processAudioData);
 
+	//VL53L0X_start();
 	proximity_start();
 	//process_move_start();
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
@@ -87,6 +90,7 @@ int main(void)
     /* Infinite loop. */
     while (1) {
     		//Done();
+    		wait_send_to_computer();
     		messagebus_topic_wait(proximity_topic, &proximity_values, sizeof(proximity_values));
     		chThdSleepMilliseconds(1000);
     }

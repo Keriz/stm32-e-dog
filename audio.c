@@ -14,11 +14,11 @@
 
 #define SAMPLING_FREQUENCY 	16000 //160 samples every 10ms
 #define NUMBER_CHANNELS		4
-#define NUMBER_CHANNEL_PER_STREAM 4
+#define NUMBER_CHANNEL_PER_STREAM 1
 
 //units in decimals of a millimeter
-#define DISTANCE_MIC_LEFT_RIGHT 620
-#define DISTANCE_MIC_FRONT_BACK 609
+#define DISTANCE_MIC_LEFT_RIGHT 62
+#define DISTANCE_MIC_FRONT_BACK 61
 
 #define RIGHT_MIC 0
 #define LEFT_MIC 1
@@ -34,7 +34,8 @@ static AcousticSL_Config_t    libSoundSourceLoc_Config_Instance;
 
 //pulse coded modulation mic buffer (right, left, front, bottom)
 // divided by 1000 because the alrgotihm runs with 1ms of data
-static uint16_t micBufferIN[4*SAMPLING_FREQUENCY/1000];
+//static uint16_t micBufferIN[4*SAMPLING_FREQUENCY/1000];
+static uint16_t micBufferIN[4*16000/100];
 
 
 
@@ -50,7 +51,7 @@ uint16_t acoustic_init(void){
 	libSoundSourceLoc_Handler_Instance.ptr_M2_channels = NUMBER_CHANNEL_PER_STREAM;
 	libSoundSourceLoc_Handler_Instance.ptr_M3_channels = NUMBER_CHANNEL_PER_STREAM;
 	libSoundSourceLoc_Handler_Instance.ptr_M4_channels = NUMBER_CHANNEL_PER_STREAM;
-	libSoundSourceLoc_Handler_Instance.samples_to_process = 512;
+	libSoundSourceLoc_Handler_Instance.samples_to_process = 640;
 	AcousticSL_getMemorySize( &libSoundSourceLoc_Handler_Instance);
 	libSoundSourceLoc_Handler_Instance.pInternalMemory=(uint32_t *)malloc(libSoundSourceLoc_Handler_Instance.internal_memory_size);
 
@@ -67,8 +68,8 @@ uint16_t acoustic_init(void){
 	}
 
 	/*Setup Source Localization dynamic parameters*/
-	libSoundSourceLoc_Config_Instance.resolution = 10;
-	libSoundSourceLoc_Config_Instance.threshold = 15000;
+	libSoundSourceLoc_Config_Instance.resolution = 1000;
+	libSoundSourceLoc_Config_Instance.threshold = 65535;
 	error_value = AcousticSL_setConfig(&libSoundSourceLoc_Handler_Instance, &libSoundSourceLoc_Config_Instance);
 
 	if(error_value != 0)
@@ -96,17 +97,14 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 
 	int32_t result[4];
 
-	for (uint16_t i = 0; i < 16; ++i){
+	for (uint16_t i = 0; i < 160; ++i){
 
 		micBufferIN[i*4+RIGHT_MIC] 	= data[i*4+RIGHT_MIC];
 		micBufferIN[i*4+LEFT_MIC] 	= data[i*4+LEFT_MIC];
 		micBufferIN[i*4+FRONT_MIC] 	= data[i*4+FRONT_MIC];
 		micBufferIN[i*4+BOTTOM_MIC] = data[i*4+BOTTOM_MIC];
-
-		if(i >= (4*SAMPLING_FREQUENCY/1000) ){
-					break;
-				}
 	}
+
 
 	//for (uint16_t j = 0; j < (4*SAMPLING_FREQUENCY/1000); ++j){
 	//	chprintf((BaseSequentialStream *)&SD3, "micbuffer= %d\n",micBufferIN[j]);
@@ -118,7 +116,7 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 
 		AcousticSL_Process((int32_t *)result, &libSoundSourceLoc_Handler_Instance);
 
-		chprintf((BaseSequentialStream *)&SD3, "result before =%d\n",result[0] );
+		//chprintf((BaseSequentialStream *)&SD3, "result before =%d\n",result[0] );
 		if(result[0]!=ACOUSTIC_SL_NO_AUDIO_DETECTED)
 		{
 		result[0]=(result[0] - 45);
@@ -126,6 +124,8 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		  result[0]+=360;
 		chprintf((BaseSequentialStream *)&SD3, "result=%d\n",result[0] );
 		}
+		else
+			chprintf((BaseSequentialStream *)&SD3, "result=%d\n",result[0] );
 
 	}
 }

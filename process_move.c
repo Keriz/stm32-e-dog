@@ -60,6 +60,29 @@ void advance_or_turn_x_left(float x, bool unit){
 	}
 }
 
+int16_t pi_regulator(float distance, float goal){
+	float error=0;
+	float speed=0;
+
+	static float sum_error =0;
+	error= distance - goal;
+
+	if(fabs(error) < ERROR_THRESHOLD){
+			return 0;
+		}
+
+	sum_error += error;
+	//we set a maximum and a minimum for the sum to avoid an uncontrolled growth
+	if(sum_error > MAX_SUM_ERROR){
+		sum_error = MAX_SUM_ERROR;
+	}else if(sum_error < -MAX_SUM_ERROR){
+		sum_error = -MAX_SUM_ERROR;
+	}
+	speed = KP * error + KI * sum_error;
+
+	return (int16_t)speed;
+}
+
 void advance_or_turn_x_right(float x, bool unit){
 	counter_motor_step_init(0);
 	motor_set_position(x,unit);
@@ -82,6 +105,7 @@ static THD_FUNCTION(Processmove, arg) {
 
     systime_t time;
     uint16_t  dist_front_TL;
+    int16_t speed = 0;
     int ir_sensor7;
     int ir_sensor6;
     int ir_sensor1;
@@ -97,7 +121,7 @@ static THD_FUNCTION(Processmove, arg) {
     		ir_sensor6 = get_calibrated_prox(6);
     		ir_sensor1 = get_calibrated_prox(1);
     		ir_sensor0 = get_calibrated_prox(0);
-    		Send_value2();
+    		chprintf((BaseSequentialStream *)&SD3,"avant le PD %d\n",dist_front_TL);
     		if( ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
     			while(ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
     				ir_sensor7 = get_calibrated_prox(7);
@@ -122,7 +146,14 @@ static THD_FUNCTION(Processmove, arg) {
     		    	//int32_t degree_l= get_degree();
     		    	//advance_or_turn_x_right((90-degree) ,true);
     		}
-    		go_forward();
+    		if(dist_front_TL >90 && dist_front_TL <120){
+    			chprintf((BaseSequentialStream *)&SD3,"dans le PD %d\n",dist_front_TL);
+    			speed = pi_regulator(dist_front_TL, GOAL_DISTANCE);
+    			right_motor_set_speed(speed);
+    			left_motor_set_speed(speed);
+    		}
+    		else
+    			go_forward();
     		//else{
     			//Done();
     		//	motor_stop();
