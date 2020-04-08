@@ -23,6 +23,7 @@ void processAudioData(int16_t *data, uint16_t num_samples);
 int16_t highest_peak(float* data);
 void wait_send_to_computer(void);
 
-float* get_audio_buffer_ptr(BUFFER_NAME_t name);
+float get_dephasage_x(void);
+float get_dephasage_y(void);
 
 #endif /* AUDIO_PROCESSING_H */

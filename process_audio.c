@@ -44,6 +44,8 @@ static float micBack_cmplx_input_temp[2 * FFT_SIZE];
 static int16_t max_norm_index_right = 0;
 static int16_t max_norm_index_left = 0;;
 static int16_t max_norm_index_back=0;
+static float dephasage_x=0;
+static float dephasage_y=0;
 
 void doFFT_optimized(uint16_t size, float* complex_buffer){
 	if(size == 1024)
@@ -64,7 +66,6 @@ int16_t highest_peak(float* data){
 	return max_norm_index;
 }
 
-
 /*
 *	Callback called when the demodulation of the four microphones is done.
 *	We get 160 samples per mic every 10ms (16kHz)
@@ -73,14 +74,9 @@ int16_t highest_peak(float* data){
 void processAudioData(int16_t *data, uint16_t num_samples){
 	static uint8_t mustSend = 0;
 	static uint16_t nb_samples = 0;
-	double phase_right =0;
-	double phase_left =0;
-	double reel_right=0;
-	double imag_right=0;
-	double reel_left=0;
-	double imag_left=0;
-	double dephasage=0;
-
+	float phase_right =0;
+	float phase_left =0;
+	float phase_back =0;
 
 	//loop to fill the buffers
 	for(uint16_t i = 0 ; i < num_samples ; i+=4){
@@ -106,8 +102,6 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	}
 
 	if(nb_samples >= (2 * FFT_SIZE)){
-
-
 		doFFT_optimized(FFT_SIZE, micRight_cmplx_input);
 		doFFT_optimized(FFT_SIZE, micLeft_cmplx_input);
 		doFFT_optimized(FFT_SIZE, micBack_cmplx_input);
@@ -121,6 +115,7 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 				micBack_cmplx_input_temp[i] = micBack_cmplx_input[i];
 		}
 
+		//calculate the magnitude and find the highest peak
 		arm_cmplx_mag_f32(micRight_cmplx_input, micRight_output, FFT_SIZE);
 		arm_cmplx_mag_f32(micLeft_cmplx_input, micLeft_output, FFT_SIZE);
 		arm_cmplx_mag_f32(micBack_cmplx_input, micBack_output, FFT_SIZE);
@@ -129,27 +124,31 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		max_norm_index_left = highest_peak(micLeft_output);
 		max_norm_index_back = highest_peak(micBack_output);
 
-		//chprintf((BaseSequentialStream *)&SD3,"max_index=%d_and=%d\n",max_norm_index_right,max_norm_index_left);
-
-		if(max_norm_index_right == max_norm_index_left && max_norm_index_right != -1){
-			//reel_right= micRight_cmplx_input_temp[max_norm_index_right*2];
-			//imag_right= micRight_cmplx_input_temp[max_norm_index_right*2+1];
-			//phase_right= atan2(imag_right,reel_right);
+		// if we find an index for the same value of frequency calculate the phase
+		if(max_norm_index_right == max_norm_index_left  && max_norm_index_right != -1){
 			phase_right= atan2(micRight_cmplx_input_temp[max_norm_index_right*2+1],micRight_cmplx_input_temp[max_norm_index_right*2]);
-
-
-			//reel_left= micLeft_cmplx_input_temp[max_norm_index_left*2];
-			//imag_left= micLeft_cmplx_input_temp[max_norm_index_left*2+1];
-			//phase_left= atan2(imag_left,reel_left);
 			phase_left= atan2(micLeft_cmplx_input_temp[max_norm_index_left*2+1],micLeft_cmplx_input_temp[max_norm_index_left*2]);
-			dephasage= phase_right - phase_left;
-			if(dephasage > -1 && dephasage < 1){
-				chprintf((BaseSequentialStream *)&SD3,"angle=%f\n",dephasage*180/3.14);
-				//chprintf((BaseSequentialStream *)&SD3,"max_index=%dand=%d\n",max_norm_index_right,max_norm_index_left);
-				//chprintf((BaseSequentialStream *)&SD3,"rad=%f\n",dephasage);
-			}
+			phase_back= atan2(micBack_cmplx_input_temp[max_norm_index_back*2+1],micBack_cmplx_input_temp[max_norm_index_back*2]);
 
+			dephasage_x= phase_right - phase_left;
+			if(dephasage_x > -1 && dephasage_x < 1){ //filter
+				//chprintf((BaseSequentialStream *)&SD3,"angle=%f\n",dephasage_x*180/PI);
+				if(dephasage_x > 0){ //determine if we are in y>0 or y<0
+					dephasage_y= phase_right-phase_back;
+					//chprintf((BaseSequentialStream *)&SD3,"angle=%f\n",dephasage_y*180/PI);
+				}
+				else if(dephasage_x <0){
+					dephasage_y= phase_left-phase_back;
+					//chprintf((BaseSequentialStream *)&SD3,"x<0 angle=%f\n",dephasage_y*180/PI);
+				}
+			}
 		}
+		else{
+			dephasage_y=NOT_FOUND;
+			dephasage_x=NOT_FOUND;
+		}
+
+
 		if(mustSend > 8){
 			//signals to send the result to the computer
 			chBSemSignal(&sendToComputer_sem);
@@ -165,32 +164,10 @@ void wait_send_to_computer(void){
 	chBSemWait(&sendToComputer_sem);
 }
 
-float* get_audio_buffer_ptr(BUFFER_NAME_t name){
-	if(name == LEFT_CMPLX_INPUT){
-		return micLeft_cmplx_input;
-	}
-	else if (name == RIGHT_CMPLX_INPUT){
-		return micRight_cmplx_input;
-	}
-	else if (name == FRONT_CMPLX_INPUT){
-		return micFront_cmplx_input;
-	}
-	else if (name == BACK_CMPLX_INPUT){
-		return micBack_cmplx_input;
-	}
-	else if (name == LEFT_OUTPUT){
-		return micLeft_output;
-	}
-	else if (name == RIGHT_OUTPUT){
-		return micRight_output;
-	}
-	else if (name == FRONT_OUTPUT){
-		return micFront_output;
-	}
-	else if (name == BACK_OUTPUT){
-		return micBack_output;
-	}
-	else{
-		return NULL;
-	}
+float get_dephasage_x(void){
+	return dephasage_x;
+}
+
+float get_dephasage_y(void){
+	return dephasage_y;
 }

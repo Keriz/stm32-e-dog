@@ -8,6 +8,7 @@
 #include <main.h>
 #include <motors.h>
 #include <process_move.h>
+#include <process_audio.h>
 #include "sensors/VL53L0X/VL53L0X.h"
 #include <sensors/proximity.h>
 
@@ -29,6 +30,16 @@ void turn_right(void){
 void turn_left(void){
 	right_motor_set_speed(MOTOR_SPEED);
 	left_motor_set_speed(-MOTOR_SPEED);
+}
+
+void turn_right_PD(int speed){
+	right_motor_set_speed(-speed);
+	left_motor_set_speed(speed);
+}
+
+void turn_left_PD(int speed){
+	right_motor_set_speed(speed);
+	left_motor_set_speed(-speed);
 }
 
 void counter_motor_step_init(int32_t counter_value){
@@ -60,6 +71,15 @@ void advance_or_turn_x_left(float x, bool unit){
 	}
 }
 
+void advance_or_turn_x_right(float x, bool unit){
+	counter_motor_step_init(0);
+	motor_set_position(x,unit);
+	while(abs(position_to_reach_right) > abs(counter_step_right)){
+		counter_step_right= right_motor_get_pos();
+		turn_right();
+	}
+}
+
 int16_t pi_regulator(float distance, float goal){
 	float error=0;
 	float speed=0;
@@ -70,7 +90,6 @@ int16_t pi_regulator(float distance, float goal){
 	if(fabs(error) < ERROR_THRESHOLD){
 			return 0;
 		}
-
 	sum_error += error;
 	//we set a maximum and a minimum for the sum to avoid an uncontrolled growth
 	if(sum_error > MAX_SUM_ERROR){
@@ -83,14 +102,7 @@ int16_t pi_regulator(float distance, float goal){
 	return (int16_t)speed;
 }
 
-void advance_or_turn_x_right(float x, bool unit){
-	counter_motor_step_init(0);
-	motor_set_position(x,unit);
-	while(abs(position_to_reach_right) > abs(counter_step_right)){
-		counter_step_right= right_motor_get_pos();
-		turn_right();
-	}
-}
+
 
 void motor_stop(void){
 	right_motor_set_speed(STOP);
@@ -104,65 +116,82 @@ static THD_FUNCTION(Processmove, arg) {
     (void)arg;
 
     systime_t time;
-    uint16_t  dist_front_TL;
-    int16_t speed = 0;
-    int ir_sensor7;
-    int ir_sensor6;
-    int ir_sensor1;
-    int ir_sensor0;
-
-
-
-
+    int speed;
 
     while(1){
-    		dist_front_TL = VL53L0X_get_dist_mm();
-    		ir_sensor7 = get_calibrated_prox(7);
-    		ir_sensor6 = get_calibrated_prox(6);
-    		ir_sensor1 = get_calibrated_prox(1);
-    		ir_sensor0 = get_calibrated_prox(0);
-    		chprintf((BaseSequentialStream *)&SD3,"avant le PD %d\n",dist_front_TL);
-    		if( ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
-    			while(ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
-    				ir_sensor7 = get_calibrated_prox(7);
-    				ir_sensor6 = get_calibrated_prox(6);
-    				turn_right();
-    			}
-    			advance_or_turn_x_right(30,true);
-    			//advance_or_turn_x_right(3,false);
-    			//int32_t degree_r= get_degree();
-    			//advance_or_turn_x_left((90-degree) ,true);
-    		}
-    		if( ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
-    		    	while(ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
-    		    		ir_sensor1 = get_calibrated_prox(1);
-    		    		ir_sensor0 = get_calibrated_prox(0);
-    		    		turn_left();
-    		    	}
-    		    	advance_or_turn_x_left(30,true);
-
-    		    //	advance_or_turn_x_right(3,false);
-
-    		    	//int32_t degree_l= get_degree();
-    		    	//advance_or_turn_x_right((90-degree) ,true);
-    		}
-    		if(dist_front_TL >90 && dist_front_TL <120){
-    			chprintf((BaseSequentialStream *)&SD3,"dans le PD %d\n",dist_front_TL);
-    			speed = pi_regulator(dist_front_TL, GOAL_DISTANCE);
-    			right_motor_set_speed(speed);
-    			left_motor_set_speed(speed);
-    		}
-    		else
-    			go_forward();
-    		//else{
-    			//Done();
-    		//	motor_stop();
-    		//}
-        //100Hz
+    		float dephase_rad_x= get_dephasage_x();
+    		float dephase_rad_y= get_dephasage_y();
+    		//if no sound don't move
+		if(dephase_rad_x != NOT_FOUND && dephase_rad_y != NOT_FOUND){
+			//we are in the case where we found sound
+			float dephase_x= dephase_rad_x*180/PI;
+			//float dephase_y= dephase_rad_y*180/PI;
+			//chprintf((BaseSequentialStream *)&SD3,"before_turn_dephasage=%f\n",dephase_x);
+			if(dephase_x > 5 || dephase_x < -5 ){ //change to tolerance after
+				if(dephase_x < 0){
+					chprintf((BaseSequentialStream *)&SD3,"turn_left_dephasage=%f\n",dephase_x);
+					while(dephase_x < 5 || dephase_x > -5 ){
+						dephase_x= get_dephasage_x()*180/PI;
+						dephase_rad_x= get_dephasage_x();
+						if(dephase_rad_x== NOT_FOUND)
+							break;
+						speed= pi_regulator(dephase_x,GOAL_ANGLE);
+						turn_left_PD(abs(speed));
+					}
+				}
+				if(dephase_x > 0){
+					chprintf((BaseSequentialStream *)&SD3,"turn_right_dephasage=%f\n",dephase_x);
+					while(dephase_x < 5 || dephase_x > -5 ){
+						dephase_x= get_dephasage_x()*180/PI;
+						dephase_rad_x= get_dephasage_x();
+						if(dephase_rad_x== NOT_FOUND)
+							break;
+						speed= pi_regulator(dephase_x,GOAL_ANGLE);
+						turn_right_PD(abs(speed));
+					}
+				}
+			}
+			//else
+			//moving_by_escaping();
+		}
+		else{
+			//chprintf((BaseSequentialStream *)&SD3,"stopping\n");
+			motor_stop();
+		}
         chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
 }
 
+void moving_by_escaping(void){
+	int ir_sensor7 = get_calibrated_prox(7);
+	int ir_sensor6 = get_calibrated_prox(6);
+	int ir_sensor1 = get_calibrated_prox(1);
+	int ir_sensor0 = get_calibrated_prox(0);
+
+	if( ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
+	   while(ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
+	    		ir_sensor7 = get_calibrated_prox(7);
+	    		ir_sensor6 = get_calibrated_prox(6);
+	    		turn_right();
+	    	}
+	    	advance_or_turn_x_right(30,true);
+	    			//advance_or_turn_x_right(3,false);
+	    			//int32_t degree_r= get_degree();
+	    			//advance_or_turn_x_left((90-degree) ,true);
+	}
+	if( ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
+	    while(ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
+	    		ir_sensor1 = get_calibrated_prox(1);
+	    		ir_sensor0 = get_calibrated_prox(0);
+	    		turn_left();
+	    }
+	   	advance_or_turn_x_left(30,true);
+	    		    //	advance_or_turn_x_right(3,false);
+	    		    	//int32_t degree_l= get_degree();
+	    		    	//advance_or_turn_x_right((90-degree) ,true);
+	}
+	go_forward();
+}
 
 void process_move_start(void){
 	chThdCreateStatic(waProcessmove, sizeof(waProcessmove), NORMALPRIO, Processmove, NULL);
