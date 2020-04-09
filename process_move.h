@@ -1,10 +1,14 @@
 #ifndef EXPLORE
 #define EXPLORE
 
+#define TOO_LONG -50;
+
 void moving_by_escaping(void);
 
 void turn_right_PD(int speed);
 void turn_left_PD(int speed);
+
+float get_dephase_mean(void);
 
 void counter_motor_step_init(int32_t counter_value);
 void advance_or_turn_x_left(float x, bool unit );

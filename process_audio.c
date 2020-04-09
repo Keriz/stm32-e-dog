@@ -31,7 +31,9 @@ static float micRight_cmplx_input_temp[2 * FFT_SIZE];
 static float micBack_cmplx_input_temp[2 * FFT_SIZE];
 
 
-#define MIN_VALUE_THRESHOLD	10000 
+//#define MIN_VALUE_THRESHOLD	10000
+#define MIN_VALUE_THRESHOLD	7000
+
 
 #define MIN_FREQ		10	//we don't analyze before this index to not use resources for nothing
 #define FREQ_FORWARD	16	//250Hz
@@ -142,8 +144,13 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 					//chprintf((BaseSequentialStream *)&SD3,"x<0 angle=%f\n",dephasage_y*180/PI);
 				}
 			}
+			else{
+				dephasage_y=NOT_FOUND;
+				dephasage_x=NOT_FOUND;
+			}
 		}
 		else{
+			//chprintf((BaseSequentialStream *)&SD3,"max_norm_index=%dand%d\n",max_norm_index_right,max_norm_index_left);
 			dephasage_y=NOT_FOUND;
 			dephasage_x=NOT_FOUND;
 		}

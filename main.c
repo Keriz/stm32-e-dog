@@ -82,7 +82,7 @@ int main(void)
 	mic_start(&processAudioData);
 
 
-	proximity_start();
+	//proximity_start();
 	process_move_start();
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
 	messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");

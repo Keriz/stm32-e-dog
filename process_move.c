@@ -56,10 +56,8 @@ void motor_set_position(float x, bool unit )
 		dist_right= x* PERIMETER_EPUCK /(360); //useless?
 		x= dist_right;
 	}
-	//Set global variable with position to reach in step
 	position_to_reach_left = x * NSTEP_ONE_TURN / WHEEL_PERIMETER;
 	position_to_reach_right = x * NSTEP_ONE_TURN / WHEEL_PERIMETER;
-	//chprintf((BaseSequentialStream *)&SD3, "pos_to_reach=%d\n", position_to_reach_left);
 }
 
 void advance_or_turn_x_left(float x, bool unit){
@@ -109,28 +107,30 @@ void motor_stop(void){
 	left_motor_set_speed(STOP);
 }
 
+
 static THD_WORKING_AREA(waProcessmove, 256);
 static THD_FUNCTION(Processmove, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
 
-    systime_t time;
+    //systime_t time;
     int speed;
 
     while(1){
     		float dephase_rad_x= get_dephasage_x();
-    		float dephase_rad_y= get_dephasage_y();
+    		//float dephase_rad_y= get_dephasage_y();
+    		chprintf((BaseSequentialStream *)&SD3,"first_dephasage=%f\n",dephase_rad_x);
     		//if no sound don't move
-		if(dephase_rad_x != NOT_FOUND && dephase_rad_y != NOT_FOUND){
+		if(dephase_rad_x != NOT_FOUND){
 			//we are in the case where we found sound
 			float dephase_x= dephase_rad_x*180/PI;
 			//float dephase_y= dephase_rad_y*180/PI;
 			//chprintf((BaseSequentialStream *)&SD3,"before_turn_dephasage=%f\n",dephase_x);
-			if(dephase_x > 5 || dephase_x < -5 ){ //change to tolerance after
+			if(dephase_x > 7 || dephase_x < -7 ){ //change to tolerance after if in front of the robot do nothing
 				if(dephase_x < 0){
 					chprintf((BaseSequentialStream *)&SD3,"turn_left_dephasage=%f\n",dephase_x);
-					while(dephase_x < 5 || dephase_x > -5 ){
+					while(dephase_x < 7 || dephase_x > -7 ){
 						dephase_x= get_dephasage_x()*180/PI;
 						dephase_rad_x= get_dephasage_x();
 						if(dephase_rad_x== NOT_FOUND)
@@ -151,18 +151,22 @@ static THD_FUNCTION(Processmove, arg) {
 					}
 				}
 			}
-			//else
-			//moving_by_escaping();
+			else{
+				//chprintf((BaseSequentialStream *)&SD3,"go_forward=%f\n",dephase_rad_x*180/PI);
+				//go_forward();
+				//moving_by_escaping();
+			}
+
 		}
-		else{
+		else if(dephase_rad_x == NOT_FOUND){
 			//chprintf((BaseSequentialStream *)&SD3,"stopping\n");
-			motor_stop();
+			//motor_stop();
 		}
-        chThdSleepUntilWindowed(time, time + MS2ST(10));
+        //chThdSleepUntilWindowed(time, time + MS2ST(10));
     }
 }
 
-void moving_by_escaping(void){
+void moving_by_escaping(void){ //add after
 	int ir_sensor7 = get_calibrated_prox(7);
 	int ir_sensor6 = get_calibrated_prox(6);
 	int ir_sensor1 = get_calibrated_prox(1);
@@ -175,9 +179,6 @@ void moving_by_escaping(void){
 	    		turn_right();
 	    	}
 	    	advance_or_turn_x_right(30,true);
-	    			//advance_or_turn_x_right(3,false);
-	    			//int32_t degree_r= get_degree();
-	    			//advance_or_turn_x_left((90-degree) ,true);
 	}
 	if( ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
 	    while(ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
@@ -186,13 +187,10 @@ void moving_by_escaping(void){
 	    		turn_left();
 	    }
 	   	advance_or_turn_x_left(30,true);
-	    		    //	advance_or_turn_x_right(3,false);
-	    		    	//int32_t degree_l= get_degree();
-	    		    	//advance_or_turn_x_right((90-degree) ,true);
 	}
 	go_forward();
 }
 
 void process_move_start(void){
-	chThdCreateStatic(waProcessmove, sizeof(waProcessmove), NORMALPRIO, Processmove, NULL);
+	chThdCreateStatic(waProcessmove, sizeof(waProcessmove), NORMALPRIO+1, Processmove, NULL);
 }
