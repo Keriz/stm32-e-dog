@@ -10,15 +10,11 @@
 #include <main.h>
 #include <motors.h>
 #include <chprintf.h>
-//#include <audio.h>
+#include <audio.h>
 #include <audio/microphone.h>
 
-#include <camera/po8030.h>
-
 #include <sensors/proximity.h>
-#include "sensors/VL53L0X/VL53L0X.h"
 #include <process_move.h>
-#include <process_audio.h>
 
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
@@ -79,13 +75,14 @@ int main(void)
 
 	//proximity_start();
 	process_move_start();
-	//messagebus_init(&bus, &bus_lock, &bus_condvar);
+	messagebus_init(&bus, &bus_lock, &bus_condvar);
 	//messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");
-	proximity_msg_t proximity_values;
+	//messagebus_topic_t *phase_topic = messagebus_find_topic_blocking(&bus, "/phase");
+	//proximity_msg_t proximity_values;
     /* Infinite loop. */
     while (1) {
     		//Done();
-    		//messagebus_topic_wait(proximity_topic, &proximity_values, sizeof(proximity_values));
+    		//messagebus_topic_wait(phase_topic, &phase_value, sizeof(phase_value));
     		chThdSleepMilliseconds(1000);
     }
 }

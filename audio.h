@@ -22,7 +22,8 @@ void processAudioData(int16_t *data, uint16_t num_samples);
 int16_t highest_peak(float* data);
 void wait_send_to_computer(void);
 
-float get_dephasage_x(void);
-float get_dephasage_y(void);
+float get_phase_delay_X(void);
+float get_phase_delay_Y(void);
+bool move_or_not(void);
 
 #endif

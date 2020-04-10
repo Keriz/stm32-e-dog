@@ -246,7 +246,7 @@ UINCDIR =
 ULIBDIR =
 
 # List all user libraries here
-ULIBS = $(GLOBAL_PATH)/libPDMFilter_CM4F_GCC.a $(GLOBAL_PATH)/libarm_cortexM4lf_math.a  AcousticSL_CM4F_wc16_ot.a
+ULIBS = $(GLOBAL_PATH)/libPDMFilter_CM4F_GCC.a $(GLOBAL_PATH)/libarm_cortexM4lf_math.a
 
 
 #
