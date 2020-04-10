@@ -75,29 +75,17 @@ int main(void)
 	usb_start();
 	motors_init();
 
-
-	//if degree is possible
-	//int32_t degree= get_degree();
-	//advance_or_turn_x_left(degree ,true);
-
-	//turn_x_degree(360);
-	//parameter(x, angle(true) or cm(false)?, right(true) or left(false)?)
-	//advance_or_turn_x_left(360,true);
-	//advance_or_turn_x_right(360,true);
-
 	mic_start(&processAudioData);
-
 
 	//proximity_start();
 	process_move_start();
-	messagebus_init(&bus, &bus_lock, &bus_condvar);
-	messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");
+	//messagebus_init(&bus, &bus_lock, &bus_condvar);
+	//messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");
 	proximity_msg_t proximity_values;
     /* Infinite loop. */
     while (1) {
     		//Done();
-    		wait_send_to_computer();
-    		messagebus_topic_wait(proximity_topic, &proximity_values, sizeof(proximity_values));
+    		//messagebus_topic_wait(proximity_topic, &proximity_values, sizeof(proximity_values));
     		chThdSleepMilliseconds(1000);
     }
 }

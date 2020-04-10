@@ -65,7 +65,8 @@ void advance_or_turn_x_left(float x, bool unit){
 	motor_set_position(x,unit);
 	while(abs(position_to_reach_left) > abs(counter_step_left)){
 		counter_step_left= left_motor_get_pos();
-		turn_left();
+		if(unit)
+			turn_left();
 	}
 }
 
@@ -77,6 +78,16 @@ void advance_or_turn_x_right(float x, bool unit){
 		turn_right();
 	}
 }
+
+void advance_x(float x, bool unit){
+	counter_motor_step_init(0);
+	motor_set_position(x,unit);
+	while(abs(position_to_reach_right) > abs(counter_step_right)){
+		counter_step_right= right_motor_get_pos();
+		go_forward();
+	}
+}
+
 
 int16_t pi_regulator(float distance, float goal){
 	float error=0;
@@ -118,49 +129,53 @@ static THD_FUNCTION(ProcessMove, arg) {
     int speed;
 
     while(1){
+    		if(move_or_not()){
+    			go_forward();
+    			chprintf((BaseSequentialStream *)&SD3,"wesh\n");
+    		}
+
+
     		float dephase_rad_x= get_dephasage_x();
-    		//float dephase_rad_y= get_dephasage_y();
-    		chprintf((BaseSequentialStream *)&SD3,"first_dephasage=%f\n",dephase_rad_x);
     		//if no sound don't move
 		if(dephase_rad_x != NOT_FOUND){
 			//we are in the case where we found sound
 			float dephase_x= dephase_rad_x*180/PI;
-			//float dephase_y= dephase_rad_y*180/PI;
 			//chprintf((BaseSequentialStream *)&SD3,"before_turn_dephasage=%f\n",dephase_x);
-			if(dephase_x > 7 || dephase_x < -7 ){ //change to tolerance after if in front of the robot do nothing
+			if(dephase_x > 7 || dephase_x < -7 ){ //if the siynd in front of the robot do nothing
 				if(dephase_x < 0){
-					chprintf((BaseSequentialStream *)&SD3,"turn_left_dephasage=%f\n",dephase_x);
-					while(dephase_x < 7 || dephase_x > -7 ){
-						dephase_x= get_dephasage_x()*180/PI;
-						dephase_rad_x= get_dephasage_x();
-						if(dephase_rad_x== NOT_FOUND)
-							break;
-						speed= pi_regulator(dephase_x,GOAL_ANGLE);
-						turn_left_PD(abs(speed));
-					}
+					//chprintf((BaseSequentialStream *)&SD3,"turn_left_dephasage=%f\n",dephase_x);
+					//while(dephase_x < 7 || dephase_x > -7 ){
+					//	dephase_x= get_dephasage_x()*180/PI;
+					//	dephase_rad_x= get_dephasage_x();
+					//	if(dephase_rad_x== NOT_FOUND)
+					//		break;
+					//	speed= pi_regulator(dephase_x,GOAL_ANGLE);
+						//turn_left_PD(abs(speed));
+					//}
 				}
 				if(dephase_x > 0){
-					chprintf((BaseSequentialStream *)&SD3,"turn_right_dephasage=%f\n",dephase_x);
-					while(dephase_x < 5 || dephase_x > -5 ){
-						dephase_x= get_dephasage_x()*180/PI;
-						dephase_rad_x= get_dephasage_x();
-						if(dephase_rad_x== NOT_FOUND)
-							break;
-						speed= pi_regulator(dephase_x,GOAL_ANGLE);
-						turn_right_PD(abs(speed));
-					}
+					//chprintf((BaseSequentialStream *)&SD3,"turn_right_dephasage=%f\n",dephase_x);
+					//while(dephase_x < 5 || dephase_x > -5 ){
+					//	dephase_x= get_dephasage_x()*180/PI;
+					//	dephase_rad_x= get_dephasage_x();
+					//	if(dephase_rad_x== NOT_FOUND)
+					//		break;
+					//	speed= pi_regulator(dephase_x,GOAL_ANGLE);
+						//turn_right_PD(abs(speed));
+					//}
 				}
 			}
 			else{
 				//chprintf((BaseSequentialStream *)&SD3,"go_forward=%f\n",dephase_rad_x*180/PI);
 				//go_forward();
+				//advance_x(10,false);
 				//moving_by_escaping();
 			}
 
 		}
 		else if(dephase_rad_x == NOT_FOUND){
 			//chprintf((BaseSequentialStream *)&SD3,"stopping\n");
-			//motor_stop();
+			motor_stop();
 		}
         //chThdSleepUntilWindowed(time, time + MS2ST(10));
     }

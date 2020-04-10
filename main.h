@@ -23,6 +23,7 @@ extern "C" {
 
 //#define NOT_FOUND (-10*180/PI)
 
+
 //constants for the differents parts of the project
 #define GOAL_ANGLE				0
 #define GOAL_DISTANCE 			100.0f
