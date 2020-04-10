@@ -26,4 +26,6 @@ void wait_send_to_computer(void);
 float get_dephasage_x(void);
 float get_dephasage_y(void);
 
+bool move_or_not(void); //if true move if false don't move
+
 #endif /* AUDIO_PROCESSING_H */

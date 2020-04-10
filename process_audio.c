@@ -32,16 +32,19 @@ static float micBack_cmplx_input_temp[2 * FFT_SIZE];
 
 
 //#define MIN_VALUE_THRESHOLD	10000
-#define MIN_VALUE_THRESHOLD	7000
+#define MIN_VALUE_THRESHOLD	5000
 
 
-#define MIN_FREQ		10	//we don't analyze before this index to not use resources for nothing
+#define MIN_FREQ		15	//we don't analyze before this index to not use resources for nothing
 #define FREQ_FORWARD	16	//250Hz
 #define FREQ_LEFT		19	//296Hz
 #define FREQ_RIGHT		23	//359HZ
 #define FREQ_BACKWARD	26	//406Hz
 #define MAX_FREQ		30	//we don't analyze after this index to not use resources for nothing
 
+static int16_t nothing=0; //counter
+static int16_t found=0; //counter
+static bool no_move=0; //counter
 
 static int16_t max_norm_index_right = 0;
 static int16_t max_norm_index_left = 0;;
@@ -74,6 +77,7 @@ int16_t highest_peak(float* data){
 *	
 */
 void processAudioData(int16_t *data, uint16_t num_samples){
+
 	static uint8_t mustSend = 0;
 	static uint16_t nb_samples = 0;
 	float phase_right =0;
@@ -126,8 +130,9 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		max_norm_index_left = highest_peak(micLeft_output);
 		max_norm_index_back = highest_peak(micBack_output);
 
+		//chprintf((BaseSequentialStream *)&SD3,"max_norm_index=%dand%d\n",max_norm_index_right,max_norm_index_left);
 		// if we find an index for the same value of frequency calculate the phase
-		if(max_norm_index_right == max_norm_index_left  && max_norm_index_right != -1){
+		if(max_norm_index_right == max_norm_index_left  && max_norm_index_right != -1 && max_norm_index_left != -1){
 			phase_right= atan2(micRight_cmplx_input_temp[max_norm_index_right*2+1],micRight_cmplx_input_temp[max_norm_index_right*2]);
 			phase_left= atan2(micLeft_cmplx_input_temp[max_norm_index_left*2+1],micLeft_cmplx_input_temp[max_norm_index_left*2]);
 			phase_back= atan2(micBack_cmplx_input_temp[max_norm_index_back*2+1],micBack_cmplx_input_temp[max_norm_index_back*2]);
@@ -148,9 +153,21 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 				dephasage_y=NOT_FOUND;
 				dephasage_x=NOT_FOUND;
 			}
+			found++;
+			if(found==10){
+				no_move=0;
+				found=0;
+			}
 		}
-		else{
+		else{ //not found
 			//chprintf((BaseSequentialStream *)&SD3,"max_norm_index=%dand%d\n",max_norm_index_right,max_norm_index_left);
+			//if not found for .. ms NO_MOVE ==1
+			nothing++;
+			if(nothing==10){
+				no_move = 1;
+				nothing=0;
+			}
+
 			dephasage_y=NOT_FOUND;
 			dephasage_x=NOT_FOUND;
 		}
@@ -165,6 +182,13 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		mustSend++;
 
 	}
+}
+
+bool move_or_not(void){
+	if(no_move)
+		return false; //don't move
+	else
+		return true; // move
 }
 
 void wait_send_to_computer(void){

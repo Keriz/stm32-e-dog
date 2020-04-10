@@ -66,7 +66,6 @@ int main(void)
 	serial_start();
 	usb_start();
 	motors_init();
-
 	//acoustic_init();
 	//mic_start(&processAudioData);
 
@@ -90,6 +89,7 @@ int main(void)
     /* Infinite loop. */
     while (1) {
     		//Done();
+
     		wait_send_to_computer();
     		messagebus_topic_wait(proximity_topic, &proximity_values, sizeof(proximity_values));
     		chThdSleepMilliseconds(1000);
