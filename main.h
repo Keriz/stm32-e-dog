@@ -22,7 +22,6 @@ extern "C" {
 #define WHEEL_PERIMETER     13 // [cm]
 
 //#define NOT_FOUND (-10*180/PI)
-#define NOT_FOUND -100
 
 //constants for the differents parts of the project
 #define GOAL_ANGLE				0

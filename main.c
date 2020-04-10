@@ -47,13 +47,21 @@ void Send_value3(void)
 {
 	chprintf((BaseSequentialStream *)&SD3,"pos_to_reach_right=%d\n",VL53L0X_get_dist_mm());
 }
-void Done(void)
-{
-	chprintf((BaseSequentialStream *)&SD3,"wesh\n");
-}
-void Done2(void)
-{
-	chprintf((BaseSequentialStream *)&SD3,"boucle\n");
+
+static void timer12_start(void){
+    //General Purpose Timer configuration
+    //timer 12 is a 16 bit timer so we can measure time
+    //to about 65ms with a 1Mhz counter
+    static const GPTConfig gpt12cfg = {
+        1000000,        /* 1MHz timer clock in order to measure uS.*/
+        NULL,           /* Timer callback.*/
+        0,
+        0
+    };
+
+    gptStart(&GPTD12, &gpt12cfg);
+    //let the timer count to max value
+    gptStartContinuous(&GPTD12, 0xFFFF);
 }
 
 int main(void)
@@ -67,8 +75,6 @@ int main(void)
 	usb_start();
 	motors_init();
 
-	//acoustic_init();
-	//mic_start(&processAudioData);
 
 	//if degree is possible
 	//int32_t degree= get_degree();

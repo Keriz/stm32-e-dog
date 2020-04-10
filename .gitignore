@@ -21,8 +21,6 @@
 *.a
 *.la
 *.lo
-!AcousticSL_CM4F_wc16_ot.a
-!AcousticSL_CM4F_wc32_ot.a
 
 # Shared objects (inc. Windows DLLs)
 *.dll
@@ -57,8 +55,6 @@ dkms.conf
 lib/e-puck2_main-processor/*
 lib/ChibiOS/
 lib/msgbus/*
-!lib/e-puck2_main-processor/rules.mk
-!lib/e-puck2_main-processor/Makefile
 build/
 .settings/
 .cproject

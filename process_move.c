@@ -108,8 +108,8 @@ void motor_stop(void){
 }
 
 
-static THD_WORKING_AREA(waProcessmove, 256);
-static THD_FUNCTION(Processmove, arg) {
+static THD_WORKING_AREA(waProcessMove, 256);
+static THD_FUNCTION(ProcessMove, arg) {
 
     chRegSetThreadName(__FUNCTION__);
     (void)arg;
@@ -192,5 +192,5 @@ void moving_by_escaping(void){ //add after
 }
 
 void process_move_start(void){
-	chThdCreateStatic(waProcessmove, sizeof(waProcessmove), NORMALPRIO+1, Processmove, NULL);
+	chThdCreateStatic(waProcessMove, sizeof(waProcessMove), NORMALPRIO+1, ProcessMove, NULL);
 }
