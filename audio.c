@@ -3,6 +3,7 @@
 #include <main.h>
 #include <usbcfg.h>
 #include <chprintf.h>
+
 #include <audio/microphone.h>
 #include "audio.h"
 #include <arm_math.h>
@@ -78,6 +79,8 @@ int16_t highest_peak(float* data){
 void processAudioData(int16_t *data, uint16_t num_samples){
 
 	static uint16_t nb_samples = 0;
+	static uint8_t mustSend = 0;
+
 	float phase_right =0;
 	float phase_left =0;
 	float phase_back =0;
@@ -174,12 +177,25 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 			phase_delay_X 	= NOT_FOUND;
 		}
 
+			//sends to UART3
+		if(mustSend > 25){
+			//signals to send the result to the computer
+			chBSemSignal(&sendToComputer_sem);
+			mustSend = 0;
+		}
+		nb_samples = 0;
+		mustSend++;
 
 
 		nb_samples = 0;
 
 	}
 }
+
+void wait_send_to_computer(void){
+	chBSemWait(&sendToComputer_sem);
+}
+
 
 bool move_or_not(void){
 	if(no_move)
