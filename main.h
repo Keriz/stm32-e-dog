@@ -23,16 +23,6 @@ extern "C" {
 
 #define NOT_FOUND 			-100
 
-
-//constants for the differents parts of the project
-#define GOAL_ANGLE				0
-#define GOAL_DISTANCE 			100.0f
-
-#define ERROR_THRESHOLD			0.1f	//[cm] because of the noise of the camera
-
-#define KP						50.0f
-#define KI 						3.5f	//must not be zero
-#define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
 /** Robot wide IPC bus. */
 extern messagebus_t bus;
 
