@@ -39,10 +39,6 @@ void Send_value2(void)
 
 
 }
-void Send_value3(void)
-{
-	chprintf((BaseSequentialStream *)&SD3,"pos_to_reach_right=%d\n",VL53L0X_get_dist_mm());
-}
 
 static void timer12_start(void){
     //General Purpose Timer configuration
