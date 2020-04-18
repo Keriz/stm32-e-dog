@@ -25,12 +25,8 @@ static float micBack_output[FFT_SIZE];
 
 #define COEFF_MOBILE_MEAN 0.10
 
-#define MIN_FREQ		15	//we don't analyze before this index to not use resources for counter
-#define FREQ_FORWARD	16	//250Hz
-#define FREQ_LEFT		19	//296Hz
-#define FREQ_RIGHT		23	//359HZ
-#define FREQ_BACKWARD	26	//406Hz
-#define MAX_FREQ		30	//we don't analyze after this index to not use resources for counter
+#define MIN_FREQ		15	
+#define MAX_FREQ		30	
 
 static int16_t counter=0; //counter
 static bool detection=0; //counter

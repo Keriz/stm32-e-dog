@@ -32,30 +32,6 @@ static void serial_start(void)
 	sdStart(&SD3, &ser_cfg); // UART3.
 }
 
-void Send_value2(void)
-{
-	chprintf((BaseSequentialStream *)&SD3, "prox1_cali_=%d\n", get_calibrated_prox(1));
-	chprintf((BaseSequentialStream *)&SD3, "prox0_cali_=%d\n", get_calibrated_prox(0));
-
-
-}
-
-static void timer12_start(void){
-    //General Purpose Timer configuration
-    //timer 12 is a 16 bit timer so we can measure time
-    //to about 65ms with a 1Mhz counter
-    static const GPTConfig gpt12cfg = {
-        1000000,        /* 1MHz timer clock in order to measure uS.*/
-        NULL,           /* Timer callback.*/
-        0,
-        0
-    };
-
-    gptStart(&GPTD12, &gpt12cfg);
-    //let the timer count to max value
-    gptStartContinuous(&GPTD12, 0xFFFF);
-}
-
 int main(void)
 {
 
@@ -72,13 +48,8 @@ int main(void)
 	proximity_start();
 	process_move_start();
 	messagebus_init(&bus, &bus_lock, &bus_condvar);
-	//messagebus_topic_t *proximity_topic = messagebus_find_topic_blocking(&bus, "/proximity");
-	//messagebus_topic_t *phase_topic = messagebus_find_topic_blocking(&bus, "/phase");
-	//proximity_msg_t proximity_values;
-    /* Infinite loop. */
+	
     while (1) {
-    		//Done();
-    		//messagebus_topic_wait(phase_topic, &phase_value, sizeof(phase_value));
     		chThdSleepMilliseconds(1000);
     }
 }

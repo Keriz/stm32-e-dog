@@ -1,13 +1,11 @@
 #ifndef EXPLORE
 #define EXPLORE
 
-#define TOO_LONG -50;
 
 void move_and_escape(void);
 
 void turn_right(int16_t speed);
 void turn_left(int16_t speed);
-
 
 int16_t pi_regulator(float distance, float goal);
 

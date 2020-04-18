@@ -20,7 +20,6 @@ typedef enum {
 void processAudioData(int16_t *data, uint16_t num_samples);
 
 int16_t highest_peak(float* data);
-void wait_send_to_computer(void);
 
 float get_phase_delay_X(void);
 float get_phase_delay_Y(void);

@@ -13,18 +13,21 @@
 #include <sensors/proximity.h>
 
 
-#define TOLERANCE_DELAY_PHASE 5
-#define UNIT_ANGLE 0
-#define UNIT_DISTANCE 1
+#define MOTOR_SPEED   		338 // [step/s]
+#define STOP  				0
+#define COLLISION   			600
+#define DIRECTION_CHANGED   	0
 
+#define NSTEP_ONE_TURN      1000 // number of step for 1 turn of the motor
+#define PI                  3.1415926536f
+#define WHEEL_DISTANCE      5.35f    //cm
+#define PERIMETER_EPUCK     (PI * WHEEL_DISTANCE)
+#define WHEEL_PERIMETER     13 // [cm]
+
+#define TOLERANCE_DELAY_PHASE 	5
 #define GOAL_ANGLE				0
-#define GOAL_DISTANCE 			100.0f
-#define GOAL_SENSOR 				100
 
 #define KP						50.0f
-#define KI 						3.5f	//must not be zero
-#define MAX_SUM_ERROR 			(MOTOR_SPEED_LIMIT/KI)
-#define ERROR_THRESHOLD			0.1f	//[cm] because of the noise of the camera
 
 static int16_t position_to_reach_right = 0;	    // in [step]
 static int16_t counter_step_right = 0;
@@ -42,7 +45,6 @@ void turn_right(int16_t speed){
 void turn_left(int16_t speed){
 	right_motor_set_speed(speed);
 	left_motor_set_speed(-speed);
-
 }
 
 void go_forward_x_cm(float dist)
