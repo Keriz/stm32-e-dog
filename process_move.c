@@ -12,95 +12,58 @@
 #include "sensors/VL53L0X/VL53L0X.h"
 #include <sensors/proximity.h>
 
-static int16_t position_to_reach_right = 0;	    // in [step]
-static int16_t position_to_reach_left = 0;	    // in [step]
-static int16_t counter_step_right = 0;
 
-#define TOLERANCE_DELAY_PHASE 7
-#define UNIT_ANGLE 0
-#define UNIT_DISTANCE 1
+#define MOTOR_SPEED   		338 // [step/s]
+#define STOP  				0
+#define COLLISION   			600
+#define DIRECTION_CHANGED   	0
+
+#define NSTEP_ONE_TURN      1000 // number of step for 1 turn of the motor
+#define PI                  3.1415926536f
+#define WHEEL_DISTANCE      5.35f    //cm
+#define PERIMETER_EPUCK     (PI * WHEEL_DISTANCE)
+#define WHEEL_PERIMETER     13 // [cm]
+
+#define TOLERANCE_DELAY_PHASE 	5
+#define GOAL_ANGLE				0
+
+#define KP						50.0f
+
+static int16_t position_to_reach_right = 0;	    // in [step]
+static int16_t counter_step_right = 0;
 
 void go_forward(void){
 	right_motor_set_speed(MOTOR_SPEED);
 	left_motor_set_speed(MOTOR_SPEED);
 }
 
-/*
- * int speed: should be between 0 and MOTOR_SPEED
- * float degree: if specified the robot turns until it reached the given angle
- */
-void turn_right(int16_t speed, float degree){
-	if (degree == 0){
-		right_motor_set_speed(-speed);
-		left_motor_set_speed(speed);
-	}
-	else
-	{
-		counter_motor_step_init(0);
-		motor_set_position(degree,UNIT_ANGLE);
-		while(abs(position_to_reach_right) > abs(counter_step_right)){
-				counter_step_right= right_motor_get_pos();
-				right_motor_set_speed(-speed);
-				left_motor_set_speed(speed);
-			}
-	}
+void turn_right(int16_t speed){
+	right_motor_set_speed(-speed);
+	left_motor_set_speed(speed);
 }
 
-/*
- * int speed: should be between 0 and MOTOR_SPEED
- * float degree: if specified the robot turns until it reached the given angle
- */
-void turn_left(int16_t speed, float degree){
-	if (degree == 0){
-		right_motor_set_speed(speed);
-		left_motor_set_speed(-speed);
-	}
-	else
-	{
-		counter_motor_step_init(0);
-		motor_set_position(degree,UNIT_ANGLE);
-		while(abs(position_to_reach_right) > abs(counter_step_right)){
-				counter_step_right= right_motor_get_pos();
-				right_motor_set_speed(speed);
-				left_motor_set_speed(-speed);
-			}
-	}
+void turn_left(int16_t speed){
+	right_motor_set_speed(speed);
+	left_motor_set_speed(-speed);
 }
 
-void counter_motor_step_init(int32_t counter_value){
-	left_motor_set_pos(counter_value);
-	right_motor_set_pos(counter_value);
-}
-
-void motor_set_position(float x, bool unit )
+void go_forward_x_cm(float dist)
 {
-	float dist = x; //useless?
-	if(unit == UNIT_ANGLE){ //if x in degree convert to dist
-		dist=  x* PERIMETER_EPUCK /(360);
-	}
-
-	position_to_reach_left = dist * NSTEP_ONE_TURN / WHEEL_PERIMETER;
+	//initialization
+	right_motor_set_pos(0);
 	position_to_reach_right = dist * NSTEP_ONE_TURN / WHEEL_PERIMETER;
+	while(abs(position_to_reach_right) > abs(counter_step_right)){
+		counter_step_right= right_motor_get_pos();
+		go_forward();
+	}
 }
 
 int16_t pi_regulator(float distance, float goal){
 	float error=0;
 	float speed=0;
-
-	static float sum_error =0;
 	error= distance - goal;
 
-	if(fabs(error) < ERROR_THRESHOLD){
-			return 0;
-		}
-	sum_error += error;
-	//we set a maximum and a minimum for the sum to avoid an uncontrolled growth
-	if(sum_error > MAX_SUM_ERROR){
-		sum_error = MAX_SUM_ERROR;
-	}else if(sum_error < -MAX_SUM_ERROR){
-		sum_error = -MAX_SUM_ERROR;
-	}
-	speed = KP * error + KI * sum_error;
+	speed = KP * error;
 
 	return (int16_t)speed;
 }
@@ -121,57 +84,28 @@ static THD_FUNCTION(ProcessMove, arg) {
     int16_t speed;
 
     while(1){
-    		if(move_or_not()){
-    			go_forward();
-    			chprintf((BaseSequentialStream *)&SD3,"wesh\n");
+
+    		if(get_detection()){
+    			float phase_delay_x= get_phase_delay_X()*180/PI;
+    			float phase_delay_y= get_phase_delay_Y()*180/PI;
+    			speed= pi_regulator(phase_delay_x,GOAL_ANGLE);
+
+    			if(phase_delay_x > TOLERANCE_DELAY_PHASE || phase_delay_x < -TOLERANCE_DELAY_PHASE ){ //if the sound in front of the robot do nothing
+    				if(phase_delay_x < 0)
+    					turn_left(abs(speed));
+    				if(phase_delay_x > 0)
+    					turn_right(abs(speed));
+    			}
+    			//case when the sound is just behind the robot
+    			else if((phase_delay_x > 0 && phase_delay_y < 0) || (phase_delay_x < 0 && phase_delay_y < 0))
+    				turn_right(abs(speed));
+    			else
+    				move_and_escape();
     		}
+    		else
+    			motor_stop();
 
-    	//	messagebus_topic_wait(phase_topic, &phase_value, sizeof(phase_value));
-    		float dephase_rad_x= get_phase_delay_X();
-    		//if no sound don't move
-			if(dephase_rad_x != NOT_FOUND){
-
-
-				//we are in the case where we found sound
-				float dephase_x= dephase_rad_x*180/PI;
-				//chprintf((BaseSequentialStream *)&SD3,"before_turn_dephasage=%f\n",dephase_x);
-				if(dephase_x > TOLERANCE_DELAY_PHASE || dephase_x < -TOLERANCE_DELAY_PHASE ){ //if the siynd in front of the robot do nothing
-					if(dephase_x < 0){
-						//chprintf((BaseSequentialStream *)&SD3,"turn_left_dephasage=%f\n",dephase_x);
-						//while(dephase_x < 7 || dephase_x > -7 ){
-						//	dephase_x= get_dephasage_x()*180/PI;
-						//	dephase_rad_x= get_dephasage_x();
-						//	if(dephase_rad_x== NOT_FOUND)
-						//		break;
-						//	speed= pi_regulator(dephase_x,GOAL_ANGLE);
-							//turn_left(abs(speed), 0);
-						//}
-					}
-					if(dephase_x > 0){
-						//chprintf((BaseSequentialStream *)&SD3,"turn_right_dephasage=%f\n",dephase_x);
-						//while(dephase_x < 5 || dephase_x > -5 ){
-						//	dephase_x= get_dephasage_x()*180/PI;
-						//	dephase_rad_x= get_dephasage_x();
-						//	if(dephase_rad_x== NOT_FOUND)
-						//		break;
-						//	speed= pi_regulator(dephase_x,GOAL_ANGLE);
-							//turn_right(abs(speed), 0);
-						//}
-					}
-				}
-				else{
-					//chprintf((BaseSequentialStream *)&SD3,"go_forward=%f\n",dephase_rad_x*180/PI);
-					//go_forward();
-					move_and_escape();
-				}
-
-			}
-			else if(dephase_rad_x == NOT_FOUND){
-				//chprintf((BaseSequentialStream *)&SD3,"stopping\n");
-				motor_stop();
-			}
-        //chThdSleepUntilWindowed(time, time + MS2ST(10));
-    }
+    	}
 }
 
 void move_and_escape(void){ //add after
@@ -184,21 +118,21 @@ void move_and_escape(void){ //add after
 	   while(ir_sensor6 >= COLLISION || ir_sensor7 >= COLLISION){
 	    		ir_sensor7 = get_calibrated_prox(7);
 	    		ir_sensor6 = get_calibrated_prox(6);
-	    		turn_right(MOTOR_SPEED,0);
+	    		turn_right(MOTOR_SPEED);
 	    	}
-	   turn_right(MOTOR_SPEED,10);
+	   go_forward_x_cm(10);
 	}
 	if( ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
 	    while(ir_sensor0 >= COLLISION || ir_sensor1 >= COLLISION){
 	    		ir_sensor1 = get_calibrated_prox(1);
 	    		ir_sensor0 = get_calibrated_prox(0);
-	    		turn_left(MOTOR_SPEED,0);
+	    		turn_left(MOTOR_SPEED);
 	    }
-	    turn_left(MOTOR_SPEED,10);
+	    go_forward_x_cm(10);
 	}
 	go_forward();
 }
 
 void process_move_start(void){
-	chThdCreateStatic(waProcessMove, sizeof(waProcessMove), NORMALPRIO+1, ProcessMove, NULL);
+	chThdCreateStatic(waProcessMove, sizeof(waProcessMove), NORMALPRIO, ProcessMove, NULL);
 }
