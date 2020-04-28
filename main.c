@@ -16,10 +16,9 @@
 #include <sensors/proximity.h>
 #include <process_move.h>
 
-messagebus_t bus;
-MUTEX_DECL(bus_lock);
-CONDVAR_DECL(bus_condvar);
-
+/*
+ * for debugging only
+ */
 static void serial_start(void)
 {
 	static SerialConfig ser_cfg = {
@@ -39,7 +38,7 @@ int main(void)
 	chSysInit();
 	mpu_init();
 
-	serial_start();
+	serial_start(); // for debugging
 	usb_start();
 	motors_init();
 
@@ -47,10 +46,9 @@ int main(void)
 
 	proximity_start();
 	process_move_start();
-	messagebus_init(&bus, &bus_lock, &bus_condvar);
 	
     while (1) {
-    		chThdSleepMilliseconds(1000);
+    	chThdSleepMilliseconds(1000);
     }
 }
 

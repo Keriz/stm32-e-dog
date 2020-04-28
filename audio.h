@@ -23,6 +23,6 @@ int16_t highest_peak(float* data);
 
 float get_phase_delay_X(void);
 float get_phase_delay_Y(void);
-bool get_detection(void);
+bool is_voice_detected(void);
 
 #endif

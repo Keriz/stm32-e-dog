@@ -1,16 +1,12 @@
 #include "ch.h"
 #include "hal.h"
 #include <main.h>
-#include <usbcfg.h>
-#include <chprintf.h>
 
 #include <audio/microphone.h>
 #include "audio.h"
 #include <arm_math.h>
 #include <arm_const_structs.h>
 
-//semaphore
-static BSEMAPHORE_DECL(sendToComputer_sem, TRUE);
 
 //2 times FFT_SIZE because these arrays contain complex numbers (real + imaginary)
 static float micLeft_cmplx_input[2 * FFT_SIZE];
@@ -21,16 +17,18 @@ static float micLeft_output[FFT_SIZE];
 static float micRight_output[FFT_SIZE];
 static float micBack_output[FFT_SIZE];
 
-#define MIN_VALUE_THRESHOLD	5000
-#define PHASE_RAD_THRESHOLD 1
+#define MIN_VALUE_THRESHOLD					5000
+#define PHASE_RAD_THRESHOLD 				1
 
-#define COEFF_MOBILE_MEAN 0.10
+#define COEFF_MOBILE_MEAN	 				0.10
 
-#define MIN_FREQ		15	
-#define MAX_FREQ		30	
+#define MIN_FREQ							15
+#define MAX_FREQ							30
+
+#define VOICE_CONSECUTIVE_DETECTION_MIN 	5
 
 static int16_t counter=0; //counter
-static bool detection=0; //counter
+static bool voice_detected=0; //counter
 
 
 static int16_t max_norm_index_right = 0;
@@ -59,14 +57,13 @@ int16_t highest_peak(float* data){
 }
 
 /*
-*	Callback called when the demodulation of the four microphones is done.
-*	We get 160 samples per mic every 10ms (16kHz)
+*	Callback called when the data acquisition of the four microphones is done.
+*	We get 160 samples per mic every 10ms (16kHz).
 *
 */
 void processAudioData(int16_t *data, uint16_t num_samples){
 
 	static uint16_t nb_samples = 0;
-	static uint8_t mustSend = 0;
 
 	float phase_right =0;
 	float phase_left =0;
@@ -115,8 +112,8 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 			phase_back	= atan2(micBack_cmplx_input[max_norm_index_back*2+1],micBack_cmplx_input[max_norm_index_back*2]);
 
 			float new_phase_delay_X = phase_right - phase_left;
-			if(new_phase_delay_X > -PHASE_RAD_THRESHOLD && new_phase_delay_X < PHASE_RAD_THRESHOLD){ //filter
-				phase_delay_X = COEFF_MOBILE_MEAN*new_phase_delay_X + (1-COEFF_MOBILE_MEAN)*phase_delay_X;
+			if(new_phase_delay_X > -PHASE_RAD_THRESHOLD && new_phase_delay_X < PHASE_RAD_THRESHOLD){ //filter for out of range phase values
+				phase_delay_X = COEFF_MOBILE_MEAN*new_phase_delay_X + (1-COEFF_MOBILE_MEAN)*phase_delay_X; //mobile mean for more accurate phase value
 				float new_phase_delay_Y;
 				if(phase_delay_X > 0){
 					new_phase_delay_Y= phase_right-phase_back;
@@ -130,12 +127,12 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 						phase_delay_Y = COEFF_MOBILE_MEAN*new_phase_delay_Y + (1-COEFF_MOBILE_MEAN)*phase_delay_Y;
 				}
 			}
-			detection = 1;
+			voice_detected = true;
 		}
-		else{ //not found
+		else{ //voice not found
 			counter++;
-			if(counter==5){
-				detection = 0;
+			if(counter==VOICE_CONSECUTIVE_DETECTION_MIN){
+				voice_detected = false;
 				counter=0;
 			}
 		}
@@ -143,8 +140,8 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	}
 }
 
-bool get_detection(void){
-	if(detection)
+bool is_voice_detected(void){
+	if(voice_detected)
 		return true; //if true move
 	else
 		return false; // if not true don't move
