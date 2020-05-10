@@ -95,19 +95,20 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 
 		doFFT_optimized(FFT_SIZE, micRight_cmplx_input);
 		doFFT_optimized(FFT_SIZE, micLeft_cmplx_input);
-		doFFT_optimized(FFT_SIZE, micBack_cmplx_input);
+
 
 		//calculate the magnitude and find the highest peak
 		arm_cmplx_mag_f32(micRight_cmplx_input, micRight_output, FFT_SIZE);
 		arm_cmplx_mag_f32(micLeft_cmplx_input, micLeft_output, FFT_SIZE);
-		arm_cmplx_mag_f32(micBack_cmplx_input, micBack_output, FFT_SIZE);
+
 
 		max_norm_index_right= highest_peak(micRight_output);
 		max_norm_index_left = highest_peak(micLeft_output);
-		max_norm_index_back = highest_peak(micBack_output);
+
 
 		// if we find an index for the same value of frequency calculate the phase
 		if(max_norm_index_right == max_norm_index_left  && max_norm_index_right != INDEX_NOT_FOUND && max_norm_index_left != INDEX_NOT_FOUND){
+
 			phase_right	= atan2(micRight_cmplx_input[max_norm_index_right*2+1],micRight_cmplx_input[max_norm_index_right*2]);
 			phase_left	= atan2(micLeft_cmplx_input[max_norm_index_left*2+1],micLeft_cmplx_input[max_norm_index_left*2]);
 			phase_back	= atan2(micBack_cmplx_input[max_norm_index_back*2+1],micBack_cmplx_input[max_norm_index_back*2]);
@@ -115,6 +116,11 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 			float new_phase_delay_X = phase_right - phase_left;
 			if(new_phase_delay_X > -PHASE_RAD_THRESHOLD && new_phase_delay_X < PHASE_RAD_THRESHOLD){ //filter for out of range phase values
 				phase_delay_X = COEFF_MOBILE_MEAN*new_phase_delay_X + (1-COEFF_MOBILE_MEAN)*phase_delay_X; //mobile mean for more accurate phase value
+
+				doFFT_optimized(FFT_SIZE, micBack_cmplx_input);
+				arm_cmplx_mag_f32(micBack_cmplx_input, micBack_output, FFT_SIZE);
+				max_norm_index_back = highest_peak(micBack_output);
+
 				float new_phase_delay_Y;
 				if(phase_delay_X > 0){
 					new_phase_delay_Y= phase_right-phase_back;

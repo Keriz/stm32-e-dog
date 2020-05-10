@@ -77,7 +77,7 @@ void motor_stop(void){
 }
 
 
-static THD_WORKING_AREA(waProcessMove, 64);
+static THD_WORKING_AREA(waProcessMove, 256);
 static THD_FUNCTION(ProcessMove, arg) {
 
     chRegSetThreadName(__FUNCTION__);
