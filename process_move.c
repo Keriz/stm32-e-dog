@@ -84,7 +84,6 @@ static THD_FUNCTION(ProcessMove, arg) {
     int16_t speed;
 
     while(1){
-
     		if(get_detection()){
     			float phase_delay_x= get_phase_delay_X()*180/PI;
     			float phase_delay_y= get_phase_delay_Y()*180/PI;
@@ -104,8 +103,8 @@ static THD_FUNCTION(ProcessMove, arg) {
     		}
     		else
     			motor_stop();
-
     	}
+
 }
 
 void move_and_escape(void){ //add after
@@ -134,5 +133,5 @@ void move_and_escape(void){ //add after
 }
 
 void process_move_start(void){
-	chThdCreateStatic(waProcessMove, sizeof(waProcessMove), NORMALPRIO, ProcessMove, NULL);
+	chThdCreateStatic(waProcessMove, sizeof(waProcessMove), NORMALPRIO-1, ProcessMove, NULL);
 }
