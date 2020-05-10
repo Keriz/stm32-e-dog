@@ -77,7 +77,7 @@ void motor_stop(void){
 }
 
 
-static THD_WORKING_AREA(waProcessMove, 256);
+static THD_WORKING_AREA(waProcessMove, 64);
 static THD_FUNCTION(ProcessMove, arg) {
 
     chRegSetThreadName(__FUNCTION__);
@@ -92,7 +92,7 @@ static THD_FUNCTION(ProcessMove, arg) {
     			float phase_delay_y= get_phase_delay_Y()*180/PI;
     			speed= p_regulator(phase_delay_x, GOAL_ANGLE);
 
-    			if(phase_delay_x > TOLERANCE_DELAY_PHASE || phase_delay_x < -TOLERANCE_DELAY_PHASE ){ //if the sound is in front of the robot , it doens't move
+    			if(phase_delay_x > TOLERANCE_DELAY_PHASE || phase_delay_x < -TOLERANCE_DELAY_PHASE ){ //if the sound is in front of the robot , it doesn't move
     				if(phase_delay_x < 0)
     					turn_left(abs(speed));
     				if(phase_delay_x > 0)
@@ -139,5 +139,5 @@ void move_and_escape(void){
 }
 
 void process_move_start(void){
-	chThdCreateStatic(waProcessMove, sizeof(waProcessMove), NORMALPRIO, ProcessMove, NULL);
+	chThdCreateStatic(waProcessMove, sizeof(waProcessMove), NORMALPRIO-1, ProcessMove, NULL);
 }

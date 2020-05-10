@@ -26,8 +26,9 @@ static float micBack_output[FFT_SIZE];
 #define MAX_FREQ							30
 
 #define VOICE_CONSECUTIVE_DETECTION_MIN 	5
+#define INDEX_NOT_FOUND						-1
 
-static int16_t counter=0; //counter
+static int8_t counter=0; //counter
 static bool voice_detected=0; //counter
 
 
@@ -106,7 +107,7 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 		max_norm_index_back = highest_peak(micBack_output);
 
 		// if we find an index for the same value of frequency calculate the phase
-		if(max_norm_index_right == max_norm_index_left  && max_norm_index_right != -1 && max_norm_index_left != -1){
+		if(max_norm_index_right == max_norm_index_left  && max_norm_index_right != INDEX_NOT_FOUND && max_norm_index_left != INDEX_NOT_FOUND){
 			phase_right	= atan2(micRight_cmplx_input[max_norm_index_right*2+1],micRight_cmplx_input[max_norm_index_right*2]);
 			phase_left	= atan2(micLeft_cmplx_input[max_norm_index_left*2+1],micLeft_cmplx_input[max_norm_index_left*2]);
 			phase_back	= atan2(micBack_cmplx_input[max_norm_index_back*2+1],micBack_cmplx_input[max_norm_index_back*2]);
